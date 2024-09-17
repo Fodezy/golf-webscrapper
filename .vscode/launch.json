@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Playwright Test",
+      "runtimeExecutable": "npx",
+      "args": ["playwright", "test", "golfthe6.spec.js", "--project=chromium"],
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    }
+  ]
+}

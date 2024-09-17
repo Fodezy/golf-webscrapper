@@ -1,0 +1,17 @@
+{
+  "name": "web-scrapper-golfthe6",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test-ui": "npx playwright test golfthe6.spec.js --project=chromium --ui",
+  "test": "npx playwright test golfthe6.spec.js --project=chromium"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.47.1",
+    "@types/node": "^22.5.5"
+  }
+}
