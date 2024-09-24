@@ -1,6 +1,7 @@
 const { test, expect } = require("@playwright/test");
 const fs = require("fs");
-const path = 'golfthe6-report.txt';
+const path = require("path");
+const reportFilePath = "golfthe6-report.txt";
 
 async function loadPage(page) {
   await page.goto("https://app.golfthe6ix.com/web/tee-times");
@@ -9,18 +10,18 @@ async function loadPage(page) {
 async function selectNextDay(page) {
   await page.click('input[placeholder="Choose date"]');
   await page.waitForSelector('[data-mat-calendar="mat-datepicker-0"]');
-  
+
   const nextDay = new Date().getDate() + 1;
   await page.click(`.mat-calendar-body-cell-content:text("${nextDay}")`);
 }
 
 async function selectCourse(page, courseName) {
   // Click the course dropdown (the input field)
-  await page.click('#mat-input-1');
-  
+  await page.click("#mat-input-1");
+
   // Wait for the course options to appear (adjust this selector if necessary)
-  await page.waitForSelector('.a-text-h3');  // this line isn not working 
-  
+  await page.waitForSelector(".a-text-h3"); // this line isn not working
+
   // Check if courseName is provided, if not, select "All Courses"
   if (!courseName) {
     // Select "All Courses"
@@ -34,17 +35,15 @@ async function selectCourse(page, courseName) {
 }
 
 async function selectPlayerAmount(page, amount) {
-  
   await page.click('mat-select[formcontrolname="Players"]');
 
   // Wait for the dropdown options to appears
   await page.waitForSelector(".mat-option-text");
 
   // Select the desired number of players (e.g., 2 Players)
-  if(!amount || amount === "Any")
-  {
+  if (!amount || amount === "Any") {
     await page.click('.mat-option-text:text("Any")');
-  } else if(amount >=1 || amount <= 4) {
+  } else if (amount >= 1 || amount <= 4) {
     await page.click(`.mat-option-text:has-text("${amount} Players")`);
   }
 }
@@ -54,21 +53,19 @@ async function selectTime(page, time) {
 
   await page.click('input[formcontrolname="time"]');
 
-  await page.waitForSelector('input[formcontrolname="time"]', { visible: true });  
+  await page.waitForSelector('input[formcontrolname="time"]', {
+    visible: true,
+  });
 
   // Type the time (for example "09:30AM" or "3:00PM")
   await page.fill('input[formcontrolname="time"]', time);
 
-  await page.mouse.click(300,0);
+  await page.mouse.click(300, 0);
   await page.waitForTimeout(4000); // Wait for 4 seconds before checking visibility
-
 }
-
-
 
 // Function to scrape tee times data
 async function scrapeTeeTimesInfo(page) {
-
   await page.click(".o-teetime-filter-button");
 
   await page.waitForSelector(".o-teetime-cardview");
@@ -110,9 +107,8 @@ async function writeToFile(teeTimesData) {
   // Check if the file exists
 
   // If the file exists, append to it
-  fs.appendFileSync(path, "\n" + report);
+  fs.appendFileSync(reportFilePath, "\n" + report);
   console.log("Report appended to golfthe6-report.txt");
- 
 }
 
 /*
@@ -238,15 +234,24 @@ test("Find next day info for all Dentonia Park time slots", async ({ page }) => 
 
 */
 
-let responseHandled = false;  // Flag to ensure only one response is handled
+let responseHandled = false; // Flag to ensure only one response is handled
 
-test('Capture and save TeeTimeData from XHR response to a file', async ({ page }) => {
-  fs.writeFileSync('TeeTimeData.txt', "");
-  fs.writeFileSync(path, "");
+test("Capture and save TeeTimeData from XHR response to a file", async ({
+  page,
+}) => {
+  const courseName = "Tam OShanter";
+  const fName = `${courseName}_TeeTimeData.txt`; // add date to this file output
+  const dirPath = path.join(__dirname, "../reportData");
+  const filePath = path.join(dirPath, fName);
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true }); // Create directory, including parent directories if needed
+  }
+
+  fs.writeFileSync(filePath, "");
   // Register the 'response' event listener before triggering the request
-  page.on('response', async (response) => {
+  page.on("response", async (response) => {
     // Check if the request URL matches the XHR request you're looking for
-    if (response.url().includes('/Booking/Teetimes')) {
+    if (response.url().includes("/Booking/Teetimes")) {
       try {
         // Parse the JSON response
         const jsonResponse = await response.json();
@@ -268,16 +273,18 @@ test('Capture and save TeeTimeData from XHR response to a file', async ({ page }
 
         // Check if the response contains TeeTimeData and it's not empty
         if (jsonResponse.TeeTimeData && jsonResponse.TeeTimeData.length > 0) {
-
           const teeTimeData = jsonResponse.TeeTimeData;
 
           // Convert the TeeTimeData into a formatted string
-          const report = teeTimeData.map(entry => 
-            `\nTime: ${entry.Title}, Course: ${entry.SubTitle}, Cost: ${entry.PerPlayerCost}, Holes: ${entry.Holes}, Avaliable Slots: ${entry.AvailableSlot}`
-          ).join();
+          const report = teeTimeData
+            .map(
+              (entry) =>
+                `\nTime: ${entry.Title}, Course: ${entry.SubTitle}, Cost: ${entry.PerPlayerCost}, Holes: ${entry.Holes}, Avaliable Slots: ${entry.AvailableSlot}`
+            )
+            .join();
 
           // Write the data to a file (overwrite each time)
-          fs.appendFileSync('TeeTimeData.txt', report);
+          fs.appendFileSync(filePath, report);
 
           console.log("TeeTimeData saved to TeeTimeData.txt");
         } else {
@@ -290,32 +297,39 @@ test('Capture and save TeeTimeData from XHR response to a file', async ({ page }
   });
 
   // Trigger the actions that cause the XHR request
-  await loadPage(page);            // Navigate to the page
-  await selectNextDay(page);       // Perform actions to select the next day
-  await selectCourse(page, "Dentonia Park")
+  await loadPage(page); // Navigate to the page
+  await selectNextDay(page); // Perform actions to select the next day
+  await selectCourse(page, courseName);
   await selectPlayerAmount(page, "Any");
-  let teeTimesData = await scrapeTeeTimesInfo(page); 
+  let teeTimesData = await scrapeTeeTimesInfo(page);
 
-  const lastTeeTime = teeTimesData[teeTimesData.length - 1]
-  const lasteeTime_Time = lastTeeTime.time;
-  writeToFile(teeTimesData); 
+  let lastTeeTime = teeTimesData[teeTimesData.length - 1];
+  let lasteeTime_Time = lastTeeTime.time;
+  //writeToFile(teeTimesData);
 
-  teeTimesData = []
+  teeTimesData = [];
   let timeString = lasteeTime_Time.replace(" ", "");
-  const newTime = await clockMath(timeString);
-
-
+  let newTime = await clockMath(timeString);
 
   await selectTime(page, newTime);
-  teeTimesData = await scrapeTeeTimesInfo(page); 
-  writeToFile(teeTimesData); 
+  teeTimesData = await scrapeTeeTimesInfo(page);
+  //writeToFile(teeTimesData);
+
+  lastTeeTime = teeTimesData[teeTimesData.length - 1];
+  lasteeTime_Time = lastTeeTime.time;
+
+  teeTimesData = [];
+  timeString = lasteeTime_Time.replace(" ", "");
+  newTime = await clockMath(timeString);
+
+  await selectTime(page, newTime);
+  teeTimesData = await scrapeTeeTimesInfo(page);
 
   // Ensure there's enough time for the network requests to be made and captured
-  await page.waitForTimeout(5000);  // Adjust this as necessary
+  await page.waitForTimeout(5000); // Adjust this as necessary
 });
 
-async function clockMath(time)
-{
+async function clockMath(time) {
   // 12:40PM
   console.log(time);
 
@@ -327,28 +341,22 @@ async function clockMath(time)
 
   let [hours, minutes] = notTimePeriod.split(":");
 
-  
-
   let intHours = parseInt(hours);
   let intMinutes = parseInt(minutes);
 
   if (intMinutes >= 50) {
     intHours = intHours + 1; // Increment the hour
-    intMinutes = 0;          // Reset minutes to 00
+    intMinutes = 0; // Reset minutes to 00
   } else {
     intMinutes = intMinutes + 10; // Add 10 to the current minutes
   }
 
   // Ensure hours and minutes are formatted correctly (two digits)
-  let formattedHours = intHours.toString().padStart(2, '0');
-  let formattedMinutes = intMinutes.toString().padStart(2, '0');
+  let formattedHours = intHours.toString().padStart(2, "0");
+  let formattedMinutes = intMinutes.toString().padStart(2, "0");
 
   let updatedTime = `${formattedHours}:${formattedMinutes}${period}`;
   console.log(`Updated Time: ${updatedTime}`);
 
   return updatedTime;
-
 }
-
-
-

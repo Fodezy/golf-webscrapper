@@ -1,0 +1,5 @@
+
+Time: 7:10 AM, Course: Tam OShanter, Cost: 50.3, Holes: 9, Avaliable Slots: 1-4,
+Time: 8:00 AM, Course: Tam OShanter, Cost: 50.3, Holes: 9, Avaliable Slots: 1-1,
+Time: 3:40 PM, Course: Tam OShanter, Cost: 64.42, Holes: 18, Avaliable Slots: 1-4,
+Time: 4:40 PM, Course: Tam OShanter, Cost: 64.42, Holes: 18, Avaliable Slots: 1-4
