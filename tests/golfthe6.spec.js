@@ -235,6 +235,7 @@ test("Find next day info for all Dentonia Park time slots", async ({ page }) => 
 */
 
 let responseHandled = false; // Flag to ensure only one response is handled
+let soThisCanBePushed = true;
 
 test("Capture and save TeeTimeData from XHR response to a file", async ({
   page,
